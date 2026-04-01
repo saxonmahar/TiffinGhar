@@ -1,35 +1,37 @@
 require('dotenv').config()
-const express = require('express')
-const cors = require('cors')
 const mongoose = require('mongoose')
+const http = require('http')
+const { Server } = require('socket.io')
+const config = require('./config/env')
+const { buildApp, originAllowed } = require('./app')
+const app = buildApp()
+const server = http.createServer(app)
 
-const app = express()
+// Socket.IO for real-time order tracking
+const io = new Server(server, {
+  cors: {
+    origin: (origin, cb) => {
+      if (originAllowed(origin, config.socketOrigins)) return cb(null, true)
+      cb(new Error('Socket origin not allowed'))
+    },
+    credentials: true,
+  },
+})
+app.set('io', io)
 
-app.use(cors())
-app.use(express.json())
-app.use('/uploads', express.static('uploads'))
-
-// Routes
-app.use('/api/auth',    require('./routes/auth'))
-app.use('/api/cooks',   require('./routes/cooks'))
-app.use('/api/orders',  require('./routes/orders'))
-app.use('/api/cart',    require('./routes/cart'))
-app.use('/api/reviews', require('./routes/reviews'))
-app.use('/api/user',    require('./routes/user'))
-
-app.get('/', (req, res) => res.json({ message: 'TiffinGhar API v1.0' }))
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack)
-  res.status(500).json({ success: false, message: err.message || 'Server error' })
+io.on('connection', (socket) => {
+  // Customer joins their order room
+  socket.on('join_order', (orderId) => socket.join(`order_${orderId}`))
+  // Cook joins their dashboard room
+  socket.on('join_cook', (cookId) => socket.join(`cook_${cookId}`))
+  socket.on('disconnect', () => {})
 })
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(config.mongoUri)
   .then(() => {
     console.log('MongoDB connected')
-    app.listen(process.env.PORT || 5000, () =>
-      console.log(`Server running on port ${process.env.PORT || 5000}`)
+    server.listen(config.port, () =>
+      console.log(`Server + WebSocket on port ${config.port}`)
     )
   })
   .catch(err => { console.error('DB error:', err); process.exit(1) })

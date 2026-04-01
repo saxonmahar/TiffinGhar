@@ -25,6 +25,7 @@ const orderSchema = new mongoose.Schema({
     time:      { type: Date, default: Date.now },
     note:      String,
   }],
+  progress: { type: Number, default: 0 },
   deliveryAddress: {
     label:  String,
     detail: String,
@@ -42,6 +43,8 @@ const orderSchema = new mongoose.Schema({
     default: 'pending',
   },
   paymentRef:   String,
+  couponCode:   String,
+  discount:     { type: Number, default: 0 },
   estimatedTime: Number,  // minutes
   notes:        String,
   rated:        { type: Boolean, default: false },

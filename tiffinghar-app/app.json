@@ -17,6 +17,9 @@
     },
     "ios": {
       "bundleIdentifier": "com.tiffinghar.app"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

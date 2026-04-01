@@ -14,7 +14,7 @@ const statusColors = {
 
 const steps = { en: ['Ordered', 'Preparing', 'On way', 'Delivered'], ne: ['अर्डर', 'तयार', 'बाटोमा', 'डेलिभर'] }
 
-export default function OrderCard({ order }) {
+export default function OrderCard({ order, onUpdate, onTrack }) {
   const { lang, reorder } = useApp()
   const [showRating, setShowRating] = useState(false)
   const isActive = order.status === 'preparing' || order.status === 'onway' || order.status === 'confirmed'
@@ -59,6 +59,12 @@ export default function OrderCard({ order }) {
           </View>
         )}
 
+        {isActive && onTrack && (
+          <TouchableOpacity style={styles.trackBtn} onPress={onTrack}>
+            <Text style={styles.trackBtnText}>🗺️ {lang === 'ne' ? 'लाइभ ट्र्याक' : 'Live Track'}</Text>
+          </TouchableOpacity>
+        )}
+
         {order.status === 'delivered' && (
           <View style={styles.actions}>
             <TouchableOpacity onPress={() => reorder(order)}>
@@ -97,4 +103,6 @@ const styles = StyleSheet.create({
   actionBtn: { fontSize: 12, color: '#C0392B', fontWeight: '600' },
   rateBtn: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
   ratedText: { fontSize: 12, color: '#9ca3af' },
+  trackBtn: { marginTop: 10, backgroundColor: '#eff6ff', borderRadius: 10, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: '#bfdbfe' },
+  trackBtnText: { fontSize: 13, color: '#2563eb', fontWeight: '700' },
 })

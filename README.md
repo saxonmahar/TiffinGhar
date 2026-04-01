@@ -33,7 +33,7 @@ npm run dev               # runs on :5000
 ```bash
 cd tiffinghar-app
 npm install
-# Update src/api/client.js → set BASE_URL to your PC's LAN IP
+# Copy .env.example and set EXPO_PUBLIC_API_BASE_URL
 npx expo start
 ```
 
@@ -50,8 +50,47 @@ Copy `tiffinghar-backend/.env.example` to `.env` and fill in:
 | `MONGO_URI` | MongoDB connection string |
 | `JWT_SECRET` | Secret key for JWT tokens |
 | `PORT` | Server port (default 5000) |
+| `CORS_ORIGINS` | Comma-separated allowed frontend origins |
+| `SOCKET_CORS_ORIGINS` | Comma-separated allowed socket origins |
 
 ---
+
+## Deployment (Cloud/VPS)
+
+### Option A: Docker
+
+```bash
+docker compose up --build
+```
+
+API health check:
+
+```bash
+curl http://localhost:5000/health
+curl http://localhost:5000/ready
+```
+
+### Option B: PM2 on VPS
+
+```bash
+cd tiffinghar-backend
+npm ci
+pm2 start ecosystem.config.js
+pm2 save
+```
+
+### Release Checklist
+
+- Set production env vars in backend `.env` and frontend `.env`.
+- Use HTTPS URL for `EXPO_PUBLIC_API_BASE_URL`.
+- Set strict `CORS_ORIGINS` and `SOCKET_CORS_ORIGINS`.
+- Run backend/frontend tests before deploy.
+- Verify `/health` and `/ready` endpoints and core login/order flows post-deploy.
+
+### Expo Release Profiles
+
+- `tiffinghar-app/eas.json` contains `development`, `preview`, and `production` build profiles.
+- Update profile env URLs before first cloud release.
 
 ## Tech Stack
 

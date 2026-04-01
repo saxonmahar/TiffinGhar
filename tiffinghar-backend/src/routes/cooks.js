@@ -1,9 +1,16 @@
 const router = require('express').Router()
+const { body, param, query } = require('express-validator')
 const Cook = require('../models/Cook')
 const { protect, cookOnly } = require('../middleware/auth')
+const { validate } = require('../middleware/validate')
 
 // GET /api/cooks  — list with optional filters
-router.get('/', async (req, res) => {
+router.get('/',
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('sort').optional().isIn(['rating', 'price', 'newest']),
+  validate,
+  async (req, res) => {
   try {
     const { search, specialty, city = 'Kathmandu', sort = 'rating', page = 1, limit = 20 } = req.query
 
@@ -33,7 +40,7 @@ router.get('/', async (req, res) => {
 })
 
 // GET /api/cooks/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', param('id').isMongoId(), validate, async (req, res) => {
   try {
     const cook = await Cook.findById(req.params.id).populate('user', 'name phone')
     if (!cook) return res.status(404).json({ success: false, message: 'Cook not found' })
@@ -44,7 +51,13 @@ router.get('/:id', async (req, res) => {
 })
 
 // POST /api/cooks/register — become a cook
-router.post('/register', protect, async (req, res) => {
+router.post('/register',
+  protect,
+  body('name').optional().isString().isLength({ min: 2, max: 80 }),
+  body('bio').optional().isString().isLength({ max: 300 }),
+  body('location.area').optional().isString().isLength({ max: 120 }),
+  validate,
+  async (req, res) => {
   try {
     const existing = await Cook.findOne({ user: req.user._id })
     if (existing) return res.status(400).json({ success: false, message: 'Already registered as cook' })
@@ -59,7 +72,7 @@ router.post('/register', protect, async (req, res) => {
 })
 
 // PUT /api/cooks/my — update my cook profile
-router.put('/my', protect, cookOnly, async (req, res) => {
+router.put('/my', protect, cookOnly, body('bio').optional().isString().isLength({ max: 300 }), validate, async (req, res) => {
   try {
     const cook = await Cook.findOneAndUpdate({ user: req.user._id }, req.body, { new: true })
     res.json({ success: true, cook })
@@ -79,7 +92,14 @@ router.get('/my/profile', protect, cookOnly, async (req, res) => {
 })
 
 // POST /api/cooks/my/menu — add menu item
-router.post('/my/menu', protect, cookOnly, async (req, res) => {
+router.post('/my/menu',
+  protect,
+  cookOnly,
+  body('name').isString().isLength({ min: 2, max: 100 }),
+  body('price').isFloat({ min: 0 }),
+  body('category').optional().isIn(['veg', 'nonveg', 'vegan']),
+  validate,
+  async (req, res) => {
   try {
     const cook = await Cook.findOne({ user: req.user._id })
     cook.menu.push(req.body)
@@ -91,7 +111,15 @@ router.post('/my/menu', protect, cookOnly, async (req, res) => {
 })
 
 // PUT /api/cooks/my/menu/:itemId
-router.put('/my/menu/:itemId', protect, cookOnly, async (req, res) => {
+router.put('/my/menu/:itemId',
+  protect,
+  cookOnly,
+  param('itemId').isMongoId(),
+  body('name').optional().isString().isLength({ min: 2, max: 100 }),
+  body('price').optional().isFloat({ min: 0 }),
+  body('category').optional().isIn(['veg', 'nonveg', 'vegan']),
+  validate,
+  async (req, res) => {
   try {
     const cook = await Cook.findOne({ user: req.user._id })
     const item = cook.menu.id(req.params.itemId)
@@ -105,7 +133,7 @@ router.put('/my/menu/:itemId', protect, cookOnly, async (req, res) => {
 })
 
 // DELETE /api/cooks/my/menu/:itemId
-router.delete('/my/menu/:itemId', protect, cookOnly, async (req, res) => {
+router.delete('/my/menu/:itemId', protect, cookOnly, param('itemId').isMongoId(), validate, async (req, res) => {
   try {
     const cook = await Cook.findOne({ user: req.user._id })
     cook.menu.pull(req.params.itemId)

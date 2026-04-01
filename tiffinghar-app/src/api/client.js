@@ -1,16 +1,19 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { tokenStorage } from '../utils/tokenStorage'
 
-// Change this to your backend URL
-// For local dev: use your PC's LAN IP, e.g. http://192.168.1.4:5000
+// Your PC's LAN IP — phone must be on same WiFi
+// Change this if your IP changes: run `ipconfig` and look for WiFi IPv4
 export const BASE_URL = 'http://192.168.1.4:5000/api'
+export const SOCKET_URL = 'http://192.168.1.4:5000'
 
 const request = async (method, path, body = null) => {
-  const token = await AsyncStorage.getItem('token')
+  let token = null
+  try { token = await tokenStorage.getToken() } catch {}
+
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 8000) // 8s timeout
+  const timer = setTimeout(() => controller.abort(), 8000)
 
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -20,19 +23,21 @@ const request = async (method, path, body = null) => {
       signal: controller.signal,
     })
     clearTimeout(timer)
-    const data = await res.json()
+    const raw = await res.text()
+    let data = {}
+    try { data = raw ? JSON.parse(raw) : {} } catch { data = { message: raw || 'Server error' } }
     if (!res.ok) throw new Error(data.message || 'Request failed')
     return data
   } catch (err) {
     clearTimeout(timer)
-    if (err.name === 'AbortError') throw new Error('Request timed out. Check your connection.')
+    if (err.name === 'AbortError') throw new Error('Request timed out')
     throw err
   }
 }
 
 export const api = {
-  get:    (path)        => request('GET', path),
-  post:   (path, body)  => request('POST', path, body),
-  put:    (path, body)  => request('PUT', path, body),
-  delete: (path)        => request('DELETE', path),
+  get:    (path)       => request('GET', path),
+  post:   (path, body) => request('POST', path, body),
+  put:    (path, body) => request('PUT', path, body),
+  delete: (path)       => request('DELETE', path),
 }

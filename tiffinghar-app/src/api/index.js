@@ -1,7 +1,7 @@
 import { api } from './client'
 
 export const authAPI = {
-  login:         (phone, name, role, extraData) => api.post('/auth/login', { phone, name, role, extraData }),
+  login:         (phone, name)       => api.post('/auth/login', { phone, name }),
   me:            ()                 => api.get('/auth/me'),
   updateProfile: (data)             => api.put('/auth/update-profile', data),
 }

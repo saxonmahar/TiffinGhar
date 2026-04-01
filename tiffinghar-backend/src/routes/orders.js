@@ -1,10 +1,22 @@
 const router = require('express').Router()
+const { body, param, query } = require('express-validator')
 const Order = require('../models/Order')
 const Cook = require('../models/Cook')
 const { protect, cookOnly } = require('../middleware/auth')
+const { validate } = require('../middleware/validate')
 
 // POST /api/orders — place order
-router.post('/', protect, async (req, res) => {
+router.post('/',
+  protect,
+  body('cookId').isMongoId(),
+  body('items').isArray({ min: 1 }),
+  body('items.*.menuItemId').isMongoId(),
+  body('items.*.qty').isInt({ min: 1 }),
+  body('paymentMethod').optional().isIn(['esewa', 'khalti', 'cash']),
+  body('deliveryAddress.label').optional().isString().isLength({ max: 80 }),
+  body('deliveryAddress.detail').optional().isString().isLength({ max: 200 }),
+  validate,
+  async (req, res) => {
   try {
     const { cookId, items, deliveryAddress, paymentMethod, notes, scheduledFor } = req.body
 
@@ -29,6 +41,7 @@ router.post('/', protect, async (req, res) => {
       deliveryAddress, paymentMethod, notes, scheduledFor,
       statusHistory: [{ status: 'pending', note: 'Order placed' }],
       estimatedTime: 45,
+      progress: 10,
     })
 
     // Update cook stats
@@ -41,7 +54,13 @@ router.post('/', protect, async (req, res) => {
 })
 
 // GET /api/orders/my — customer's orders
-router.get('/my', protect, async (req, res) => {
+router.get('/my',
+  protect,
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('status').optional().isIn(['pending', 'confirmed', 'preparing', 'onway', 'delivered', 'cancelled']),
+  validate,
+  async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query
     const query = { user: req.user._id }
@@ -61,7 +80,7 @@ router.get('/my', protect, async (req, res) => {
 })
 
 // GET /api/orders/:id
-router.get('/:id', protect, async (req, res) => {
+router.get('/:id', protect, param('id').isMongoId(), validate, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('cook', 'name nameNe avatar phone location')
@@ -78,7 +97,14 @@ router.get('/:id', protect, async (req, res) => {
 })
 
 // PUT /api/orders/:id/status — cook updates status
-router.put('/:id/status', protect, cookOnly, async (req, res) => {
+router.put('/:id/status',
+  protect,
+  cookOnly,
+  param('id').isMongoId(),
+  body('status').isIn(['confirmed', 'preparing', 'onway', 'delivered', 'cancelled']),
+  body('note').optional().isString().isLength({ max: 200 }),
+  validate,
+  async (req, res) => {
   try {
     const { status, note } = req.body
     const validStatuses = ['confirmed', 'preparing', 'onway', 'delivered', 'cancelled']
@@ -88,10 +114,24 @@ router.put('/:id/status', protect, cookOnly, async (req, res) => {
     const order = await Order.findById(req.params.id)
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' })
 
+    const progressMap = { confirmed: 20, preparing: 45, onway: 75, delivered: 100, cancelled: 0 }
     order.status = status
+    order.progress = progressMap[status] || order.progress
     order.statusHistory.push({ status, note })
     if (status === 'delivered') order.paymentStatus = order.paymentMethod === 'cash' ? 'paid' : order.paymentStatus
     await order.save()
+
+    // Emit real-time update to customer
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`order_${order._id}`).emit('order_update', {
+        orderId: order._id,
+        status: order.status,
+        progress: order.progress,
+        statusLabel: status.charAt(0).toUpperCase() + status.slice(1),
+        note,
+      })
+    }
 
     res.json({ success: true, order })
   } catch (err) {
@@ -100,7 +140,7 @@ router.put('/:id/status', protect, cookOnly, async (req, res) => {
 })
 
 // PUT /api/orders/:id/cancel — customer cancels
-router.put('/:id/cancel', protect, async (req, res) => {
+router.put('/:id/cancel', protect, param('id').isMongoId(), validate, async (req, res) => {
   try {
     const order = await Order.findOne({ _id: req.params.id, user: req.user._id })
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' })

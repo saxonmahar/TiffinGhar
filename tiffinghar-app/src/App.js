@@ -10,6 +10,8 @@ import CooksScreen from './screens/CooksScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import MapScreen from './screens/MapScreen'
 import SettingsScreen from './screens/SettingsScreen'
+import CookDashboardScreen from './screens/CookDashboardScreen'
+import OffersScreen from './screens/OffersScreen'
 import CartModal from './components/CartModal'
 import Toast from './components/Toast'
 
@@ -27,6 +29,8 @@ function Shell() {
   const [cartOpen, setCartOpen] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [cookDashOpen, setCookDashOpen] = useState(false)
+  const [offersOpen, setOffersOpen] = useState(false)
 
   if (loading) {
     return (
@@ -56,6 +60,16 @@ function Shell() {
               <Text style={s.logoSub}>{lang === 'ne' ? 'घरको खाना, ढोकासम्म' : 'Home food, to your door'}</Text>
             </View>
             <View style={s.topRight}>
+              {/* Cook dashboard — only for cooks */}
+              {user?.role === 'cook' && (
+                <TouchableOpacity style={s.iconBtn} onPress={() => setCookDashOpen(true)}>
+                  <Text style={s.iconBtnText}>👩‍🍳</Text>
+                </TouchableOpacity>
+              )}
+              {/* Offers */}
+              <TouchableOpacity style={s.iconBtn} onPress={() => setOffersOpen(true)}>
+                <Text style={s.iconBtnText}>🏷️</Text>
+              </TouchableOpacity>
               {/* Map button */}
               <TouchableOpacity style={s.iconBtn} onPress={() => setMapOpen(true)}>
                 <Text style={s.iconBtnText}>🗺️</Text>
@@ -120,6 +134,16 @@ function Shell() {
       {/* Settings Modal */}
       <Modal visible={settingsOpen} animationType="slide" onRequestClose={() => setSettingsOpen(false)}>
         <SettingsScreen onClose={() => setSettingsOpen(false)} />
+      </Modal>
+
+      {/* Cook Dashboard Modal */}
+      <Modal visible={cookDashOpen} animationType="slide" onRequestClose={() => setCookDashOpen(false)}>
+        <CookDashboardScreen onClose={() => setCookDashOpen(false)} />
+      </Modal>
+
+      {/* Offers Modal */}
+      <Modal visible={offersOpen} animationType="slide" onRequestClose={() => setOffersOpen(false)}>
+        <OffersScreen onClose={() => setOffersOpen(false)} />
       </Modal>
     </SafeAreaProvider>
   )

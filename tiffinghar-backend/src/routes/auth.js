@@ -1,42 +1,25 @@
 const router = require('express').Router()
 const jwt = require('jsonwebtoken')
+const { body } = require('express-validator')
 const User = require('../models/User')
 const { protect } = require('../middleware/auth')
+const config = require('../config/env')
+const { validate } = require('../middleware/validate')
 
-const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '30d' })
+const signToken = (id) => jwt.sign({ id }, config.jwtSecret, { expiresIn: config.jwtExpiresIn })
 
-// POST /api/auth/login — direct phone login (no OTP)
-router.post('/login', async (req, res) => {
+// POST /api/auth/login
+router.post('/login', body('phone').isString().isLength({ min: 7, max: 20 }), body('name').optional().isString().isLength({ min: 2, max: 80 }), validate, async (req, res) => {
   try {
-    const { phone, name, role, extraData } = req.body
+    const { phone, name } = req.body
     if (!phone) return res.status(400).json({ success: false, message: 'Phone required' })
 
     let user = await User.findOne({ phone })
     if (!user) {
-      user = await User.create({ phone, name: name || 'User', isVerified: true, role: role || 'customer' })
+      user = await User.create({ phone, name: name || 'User', isVerified: true, role: 'customer' })
     } else {
       if (name && user.name === 'User') user.name = name
-      if (role && role === 'cook' && user.role !== 'cook') user.role = 'cook'
       await user.save()
-    }
-
-    // If registering as cook, create cook profile
-    if (role === 'cook' && extraData?.area) {
-      const Cook = require('../models/Cook')
-      const existing = await Cook.findOne({ user: user._id })
-      if (!existing) {
-        await Cook.create({
-          user: user._id,
-          name: user.name,
-          nameNe: user.name,
-          bio: extraData.bio || '',
-          location: { area: extraData.area, city: 'Kathmandu' },
-          specialties: extraData.specialty ? [extraData.specialty] : [],
-          isVerified: false,
-          isOpen: false,
-          menu: [],
-        })
-      }
     }
 
     res.json({
@@ -56,7 +39,12 @@ router.get('/me', protect, (req, res) => {
 })
 
 // PUT /api/auth/update-profile
-router.put('/update-profile', protect, async (req, res) => {
+router.put('/update-profile',
+  protect,
+  body('name').optional().isString().isLength({ min: 2, max: 80 }),
+  body('email').optional().isEmail(),
+  validate,
+  async (req, res) => {
   try {
     const { name, email } = req.body
     const user = await User.findByIdAndUpdate(req.user._id, { name, email }, { new: true }).select('-otp -otpExpiry')
