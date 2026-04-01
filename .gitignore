@@ -1,0 +1,23 @@
+# All node_modules
+**/node_modules/
+
+# All .env files
+**/.env
+**/.env.local
+**/.env.production
+
+# Expo
+**/.expo/
+**/dist/
+**/web-build/
+
+# Logs
+**/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

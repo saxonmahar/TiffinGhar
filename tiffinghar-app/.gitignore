@@ -1,0 +1,29 @@
+# Environment
+.env
+.env.local
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Dependencies
+node_modules/
+
+# Native builds
+android/
+ios/
+*.apk
+*.ipa
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

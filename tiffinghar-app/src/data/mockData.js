@@ -1,0 +1,103 @@
+export const cooks = [
+  {
+    id: 1,
+    name: 'Maya Didi', nameNe: 'माया दिदी',
+    location: 'Baneshwor', locationNe: 'बानेश्वर',
+    distance: '0.8 km', rating: 4.9, reviews: 142,
+    avatar: '👩', avatarBg: '#FAECE7',
+    badges: [
+      { label: 'Verified', labelNe: 'प्रमाणित', type: 'green' },
+      { label: 'Home Cook', labelNe: 'घरेलु', type: 'default' },
+      { label: 'Newari Special', labelNe: 'नेवारी', type: 'blue' },
+    ],
+    meals: ['Dal Bhat', 'Wo', 'Achar', 'Chatamari', 'Yomari', 'Bara'],
+    mealsNe: ['दाल भात', 'वो', 'अचार', 'चतामरी', 'योमरी', 'बरा'],
+    price: 180, available: true, saved: true,
+    description: 'Authentic Newari home cooking with fresh local ingredients.',
+    descriptionNe: 'ताजा स्थानीय सामग्रीसहित प्रामाणिक नेवारी घरेलु खाना।',
+  },
+  {
+    id: 2,
+    name: 'Sarita Auntie', nameNe: 'सरिता आन्टी',
+    location: 'Koteshwor', locationNe: 'कोटेश्वर',
+    distance: '1.4 km', rating: 4.7, reviews: 98,
+    avatar: '👩‍🍳', avatarBg: '#FAECE7',
+    badges: [
+      { label: 'Verified', labelNe: 'प्रमाणित', type: 'green' },
+      { label: 'Vegetarian', labelNe: 'शाकाहारी', type: 'default' },
+    ],
+    meals: ['Roti Tarkari', 'Khichdi', 'Sabji', 'Pulao'],
+    mealsNe: ['रोटी तरकारी', 'खिचडी', 'सब्जी', 'पुलाउ'],
+    price: 150, available: true, saved: true,
+    description: 'Pure vegetarian meals. Weekly subscription plans available.',
+    descriptionNe: 'शुद्ध शाकाहारी खाना। साप्ताहिक सदस्यता उपलब्ध।',
+  },
+  {
+    id: 3,
+    name: 'Ram Bhai', nameNe: 'राम भाई',
+    location: 'Tinkune', locationNe: 'तिनकुने',
+    distance: '2.1 km', rating: 4.6, reviews: 61,
+    avatar: '🧑‍🍳', avatarBg: '#EAF3DE',
+    badges: [
+      { label: 'Verified', labelNe: 'प्रमाणित', type: 'green' },
+      { label: 'Thakali Special', labelNe: 'थकाली', type: 'blue' },
+    ],
+    meals: ['Thakali Set', 'Gundruk', 'Dhido', 'Sekuwa'],
+    mealsNe: ['थकाली सेट', 'गुन्द्रुक', 'ढिडो', 'सेकुवा'],
+    price: 220, available: true, saved: false,
+    description: 'Authentic Thakali cuisine from Mustang.',
+    descriptionNe: 'मुस्ताङबाट प्रामाणिक थकाली खाना।',
+  },
+  {
+    id: 4,
+    name: 'Kamala Didi', nameNe: 'कमला दिदी',
+    location: 'Lazimpat', locationNe: 'लाजिम्पाट',
+    distance: '3.2 km', rating: 4.8, reviews: 77,
+    avatar: '👩', avatarBg: '#E6F1FB',
+    badges: [
+      { label: 'Verified', labelNe: 'प्रमाणित', type: 'green' },
+      { label: 'Organic', labelNe: 'जैविक', type: 'green' },
+    ],
+    meals: ['Dal Bhat', 'Momo', 'Chowmein', 'Fried Rice'],
+    mealsNe: ['दाल भात', 'मोमो', 'चाउमिन', 'फ्राइड राइस'],
+    price: 200, available: false, saved: false,
+    description: 'Organic ingredients, healthy home meals.',
+    descriptionNe: 'जैविक सामग्री, स्वस्थ घरेलु खाना।',
+  },
+]
+
+export const orders = [
+  {
+    id: 'ORD001', cookId: 1,
+    cookName: 'Maya Didi', cookNameNe: 'माया दिदी',
+    item: 'Dal Bhat Set', itemNe: 'दाल भात सेट',
+    qty: 1, price: 180,
+    status: 'preparing', statusLabel: 'Preparing', statusLabelNe: 'तयार हुँदैछ',
+    orderedAt: '9:45 AM', estimatedAt: '12:30 PM',
+    date: 'Today', dateNe: 'आज', progress: 45, rated: false,
+  },
+  {
+    id: 'ORD002', cookId: 2,
+    cookName: 'Sarita Auntie', cookNameNe: 'सरिता आन्टी',
+    item: 'Roti Tarkari', itemNe: 'रोटी तरकारी',
+    qty: 2, price: 300,
+    status: 'delivered', statusLabel: 'Delivered', statusLabelNe: 'डेलिभर भयो',
+    orderedAt: '10:00 AM', estimatedAt: '12:20 PM',
+    date: 'Yesterday', dateNe: 'हिजो', progress: 100, rated: false,
+  },
+  {
+    id: 'ORD003', cookId: 3,
+    cookName: 'Ram Bhai', cookNameNe: 'राम भाई',
+    item: 'Thakali Set', itemNe: 'थकाली सेट',
+    qty: 1, price: 220,
+    status: 'delivered', statusLabel: 'Delivered', statusLabelNe: 'डेलिभर भयो',
+    orderedAt: '11:30 AM', estimatedAt: '1:05 PM',
+    date: '2 days ago', dateNe: '२ दिन अघि', progress: 100, rated: true, rating: 5,
+  },
+]
+
+export const subscriptionPlans = [
+  { id: 'basic', name: 'Basic', nameNe: 'बेसिक', meals: 5, price: 750, perMeal: 150, desc: '5 meals/week', descNe: '५ खाना/हप्ता', popular: false },
+  { id: 'standard', name: 'Standard', nameNe: 'स्ट्यान्डर्ड', meals: 10, price: 1400, perMeal: 140, desc: '10 meals/week', descNe: '१० खाना/हप्ता', popular: true },
+  { id: 'premium', name: 'Premium', nameNe: 'प्रिमियम', meals: 20, price: 2600, perMeal: 130, desc: '20 meals/month', descNe: '२० खाना/महिना', popular: false },
+]
