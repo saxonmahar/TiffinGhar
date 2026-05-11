@@ -14,6 +14,7 @@ import CookDashboardScreen from './screens/CookDashboardScreen'
 import OffersScreen from './screens/OffersScreen'
 import CartModal from './components/CartModal'
 import Toast from './components/Toast'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const TABS = [
   { id: 'home',    icon: '🏠', en: 'Home',    ne: 'होम' },
@@ -151,11 +152,13 @@ function Shell() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <Shell />
-      </AppProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppProvider>
+          <Shell />
+        </AppProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

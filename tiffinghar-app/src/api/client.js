@@ -1,9 +1,9 @@
 import { tokenStorage } from '../utils/tokenStorage'
 
-// Your PC's LAN IP — phone must be on same WiFi
-// Change this if your IP changes: run `ipconfig` and look for WiFi IPv4
-export const BASE_URL = 'http://192.168.1.4:5000/api'
-export const SOCKET_URL = 'http://192.168.1.4:5000'
+// Priority: EXPO_PUBLIC_API_BASE_URL env var → LAN IP fallback
+// To change: update tiffinghar-app/.env with your PC's LAN IP
+export const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.4:5000/api'
+export const SOCKET_URL = BASE_URL.replace('/api', '')
 
 const request = async (method, path, body = null) => {
   let token = null
@@ -30,7 +30,7 @@ const request = async (method, path, body = null) => {
     return data
   } catch (err) {
     clearTimeout(timer)
-    if (err.name === 'AbortError') throw new Error('Request timed out')
+    if (err.name === 'AbortError') throw new Error('Request timed out. Check your connection.')
     throw err
   }
 }
