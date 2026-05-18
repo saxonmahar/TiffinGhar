@@ -1,59 +1,59 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { Alert } from 'react-native'
 import { authAPI } from '../api'
 import { tokenStorage } from '../utils/tokenStorage'
 
 const AuthContext = createContext(null)
 
-// Local token helpers for offline fallback
-const makeLocalToken = (phone, name) => 'local_' + btoa(JSON.stringify({ phone, name, id: phone, role: 'customer' }))
-const parseLocalToken = (token) => {
-  try {
-    if (!token?.startsWith('local_')) return null
-    return JSON.parse(atob(token.replace('local_', '')))
-  } catch { return null }
-}
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Restore session on app start
   useEffect(() => {
     tokenStorage.getToken()
-      .then(token => {
+      .then(async token => {
         if (!token) { setLoading(false); return }
-
-        // Local token — works instantly offline
-        const local = parseLocalToken(token)
-        if (local) {
-          setUser({ _id: local.phone, name: local.name, phone: local.phone, role: local.role })
+        try {
+          const data = await authAPI.me()
+          setUser(data.user)
+        } catch {
+          await tokenStorage.removeToken()
+        } finally {
           setLoading(false)
-          return
         }
-
-        // Real JWT — verify with API but don't block UI
-        setLoading(false) // show app immediately
-        authAPI.me()
-          .then(data => setUser(data.user))
-          .catch(() => tokenStorage.removeToken().then(() => setUser(null)))
       })
       .catch(() => setLoading(false))
   }, [])
 
+  // Phone login — direct, no OTP (add Twilio later for production)
   const login = async (phone, name, role = 'customer', extraData = {}) => {
-    try {
-      const data = await authAPI.login(phone, name, role, extraData)
-      await tokenStorage.setToken(data.token)
-      setUser(data.user)
-      return data
-    } catch {
-      // Offline fallback — works without backend
-      const userName = name || 'User'
-      const token = makeLocalToken(phone, userName)
-      await tokenStorage.setToken(token)
-      const u = { _id: phone, name: userName, phone, role }
-      setUser(u)
-      return { user: u, token }
-    }
+    const data = await authAPI.login(phone, name, role, extraData)
+    await tokenStorage.setToken(data.token)
+    setUser(data.user)
+    return data
+  }
+
+  // Google login — opens browser OAuth flow
+  const loginWithGoogle = async () => {
+    // TODO: Configure Google OAuth client ID in app.json
+    // For now show a helpful message
+    Alert.alert(
+      'Google Login',
+      'To enable Google login:\n1. Create a project at console.cloud.google.com\n2. Add your OAuth client ID to app.json\n\nFor now, use phone login.',
+      [{ text: 'Use Phone Login' }]
+    )
+    throw new Error('Google login not configured yet')
+  }
+
+  // Facebook login — opens browser OAuth flow
+  const loginWithFacebook = async () => {
+    Alert.alert(
+      'Facebook Login',
+      'To enable Facebook login:\n1. Create an app at developers.facebook.com\n2. Add your App ID to app.json\n\nFor now, use phone login.',
+      [{ text: 'Use Phone Login' }]
+    )
+    throw new Error('Facebook login not configured yet')
   }
 
   const logout = async () => {
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
   const updateUser = (updates) => setUser(u => ({ ...u, ...updates }))
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithFacebook, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   )
