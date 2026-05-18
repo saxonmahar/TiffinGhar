@@ -15,6 +15,7 @@ import OffersScreen from './screens/OffersScreen'
 import CartModal from './components/CartModal'
 import Toast from './components/Toast'
 import ErrorBoundary from './components/ErrorBoundary'
+import { usePushNotifications } from './hooks/usePushNotifications'
 
 const TABS = [
   { id: 'home',    icon: '🏠', en: 'Home',    ne: 'होम' },
@@ -26,6 +27,7 @@ const TABS = [
 function Shell() {
   const { lang, setLang, cartCount } = useApp()
   const { user, loading } = useAuth()
+  usePushNotifications(user) // register push notifications
   const [activeTab, setActiveTab] = useState('home')
   const [cartOpen, setCartOpen] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)

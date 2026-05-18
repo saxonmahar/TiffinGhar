@@ -20,7 +20,9 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "INTERNET",
-        "CAMERA"
+        "CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "ios": {
@@ -29,12 +31,18 @@
     },
     "plugins": [
       "expo-secure-store",
+      "expo-notifications",
       [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "TiffinGhar needs your location to find cooks near you."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "86fcc55a-0c80-47b8-bf8b-bdaee54cb5b4"
+      }
+    }
   }
 }

@@ -1,9 +1,11 @@
 import { api } from './client'
 
 export const authAPI = {
-  login:         (phone, name, role, extraData) => api.post('/auth/login', { phone, name, role, extraData }),
-  me:            ()                 => api.get('/auth/me'),
-  updateProfile: (data)             => api.put('/auth/update-profile', data),
+  sendOtp:       (phone)                    => api.post('/auth/send-otp', { phone }),
+  verifyOtp:     (phone, otp, name)         => api.post('/auth/verify-otp', { phone, otp, name }),
+  login:         (phone, name, role, extra) => api.post('/auth/login', { phone, name, role, extraData: extra }),
+  me:            ()                         => api.get('/auth/me'),
+  updateProfile: (data)                     => api.put('/auth/update-profile', data),
 }
 
 export const cooksAPI = {
@@ -39,7 +41,8 @@ export const reviewsAPI = {
 }
 
 export const userAPI = {
-  addAddress:   (data)        => api.post('/user/address', data),
-  deleteAddress:(id)          => api.delete(`/user/address/${id}`),
-  toggleSave:   (cookId)      => api.post('/user/save-cook', { cookId }),
+  addAddress:      (data)   => api.post('/user/address', data),
+  deleteAddress:   (id)     => api.delete(`/user/address/${id}`),
+  toggleSave:      (cookId) => api.post('/user/save-cook', { cookId }),
+  updateFcmToken:  (token)  => api.put('/user/fcm-token', { token }),
 }
