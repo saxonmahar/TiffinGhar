@@ -18,25 +18,25 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 5000)
     tokenStorage.getToken()
       .then(token => {
-        if (!token) { clearTimeout(timeout); setLoading(false); return }
+        if (!token) { setLoading(false); return }
 
-        // Check local token first (works offline)
+        // Local token — works instantly offline
         const local = parseLocalToken(token)
         if (local) {
           setUser({ _id: local.phone, name: local.name, phone: local.phone, role: local.role })
-          clearTimeout(timeout); setLoading(false); return
+          setLoading(false)
+          return
         }
 
-        // Try real API
+        // Real JWT — verify with API but don't block UI
+        setLoading(false) // show app immediately
         authAPI.me()
           .then(data => setUser(data.user))
-          .catch(() => tokenStorage.removeToken())
-          .finally(() => { clearTimeout(timeout); setLoading(false) })
+          .catch(() => tokenStorage.removeToken().then(() => setUser(null)))
       })
-      .catch(() => { clearTimeout(timeout); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
   const login = async (phone, name, role = 'customer', extraData = {}) => {

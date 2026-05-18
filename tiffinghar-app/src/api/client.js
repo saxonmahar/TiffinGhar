@@ -13,7 +13,7 @@ const request = async (method, path, body = null) => {
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 8000)
+  const timer = setTimeout(() => controller.abort(), 3000) // 3s — fail fast
 
   try {
     const res = await fetch(`${BASE_URL}${path}`, {

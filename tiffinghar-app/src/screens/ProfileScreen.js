@@ -1,29 +1,33 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Switch, StyleSheet, Image } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Modal, Switch, StyleSheet, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
-import { BentoGrid, BentoCard } from '../components/ui/BentoGrid'
 import { Accordion } from '../components/ui/Accordion'
 import { RadioGroup } from '../components/ui/RadioGroup'
-import { Badge } from '../components/ui/Badge'
-import { Button } from '../components/ui/Button'
 import Snackbar from '../components/ui/Snackbar'
 import { subscriptionPlans } from '../data/mockData'
 
 const PAYMENT_OPTIONS = [
-  { value: 'esewa',  label: 'eSewa',              desc: 'Linked · **** 4521', badge: '💚' },
-  { value: 'khalti', label: 'Khalti',             desc: 'Linked · **** 8832', badge: '💜' },
-  { value: 'cash',   label: 'Cash on Delivery',   desc: 'Pay when delivered',  badge: '💵' },
+  { value: 'esewa',  label: '💚 eSewa',           desc: 'Linked · **** 4521' },
+  { value: 'khalti', label: '💜 Khalti',           desc: 'Linked · **** 8832' },
+  { value: 'cash',   label: '💵 Cash on Delivery', desc: 'Pay when delivered' },
 ]
 
 const PLAN_OPTIONS = subscriptionPlans.map(p => ({
-  value: p.id,
-  label: p.name,
-  desc: p.desc,
-  price: `Rs. ${p.price}`,
-  badge: p.popular ? 'Popular' : null,
+  value: p.id, label: p.name, desc: p.desc,
+  price: `Rs. ${p.price}`, badge: p.popular ? 'Popular' : null,
 }))
+
+const MENU_ITEMS = (lang, setLang, setShowPayments, setShowPlans, showSnack, notifications, setNotifications) => [
+  { icon: '🌐', label: lang === 'ne' ? 'भाषा' : 'Language', sub: lang === 'en' ? 'English' : 'नेपाली', action: () => setLang(l => l === 'en' ? 'ne' : 'en'), right: 'toggle-lang' },
+  { icon: '📍', label: lang === 'ne' ? 'सेभ गरिएका ठेगाना' : 'Saved Addresses', sub: '2 addresses', action: () => showSnack('Coming soon!'), right: 'arrow' },
+  { icon: '💳', label: lang === 'ne' ? 'भुक्तानी विधि' : 'Payment Methods', sub: 'eSewa, Khalti, Cash', action: () => setShowPayments(true), right: 'arrow' },
+  { icon: '📦', label: lang === 'ne' ? 'सदस्यता योजना' : 'Subscription Plans', sub: lang === 'ne' ? 'बचत गर्नुस्' : 'Save on every meal', action: () => setShowPlans(true), right: 'badge-green' },
+  { icon: '🔔', label: lang === 'ne' ? 'सूचनाहरू' : 'Notifications', sub: notifications ? 'Enabled' : 'Disabled', right: 'switch' },
+  { icon: '🎁', label: lang === 'ne' ? 'रेफर र कमाउनुस्' : 'Refer & Earn', sub: 'Rs. 200 per referral', action: () => showSnack('Coming soon!'), right: 'arrow' },
+  { icon: '⭐', label: lang === 'ne' ? 'रेट गर्नुस्' : 'Rate the App', sub: 'Share your feedback', action: () => showSnack('Thank you! 🙏'), right: 'arrow' },
+]
 
 export default function ProfileScreen() {
   const { lang, setLang, orders } = useApp()
@@ -39,107 +43,114 @@ export default function ProfileScreen() {
 
   const totalSpent = orders.reduce((s, o) => s + (o.price || o.total || 0), 0)
   const cooksTried = [...new Set(orders.map(o => o.cookId || o.cook))].filter(Boolean).length
+  const toRate = orders.filter(o => o.status === 'delivered' && !o.rated).length
 
   const faqItems = [
-    { id: '1', icon: '🚚', title: lang === 'ne' ? 'डेलिभरी कति समयमा हुन्छ?' : 'How long does delivery take?', content: lang === 'ne' ? 'सामान्यतया ३०-४५ मिनेटमा डेलिभरी हुन्छ। व्यस्त समयमा केही ढिलो हुन सक्छ।' : 'Usually 30-45 minutes. May take longer during peak hours.' },
-    { id: '2', icon: '💳', title: lang === 'ne' ? 'कुन भुक्तानी विधि उपलब्ध छ?' : 'What payment methods are available?', content: lang === 'ne' ? 'eSewa, Khalti र नगद भुक्तानी उपलब्ध छ।' : 'eSewa, Khalti, and Cash on Delivery are available.' },
-    { id: '3', icon: '🔄', title: lang === 'ne' ? 'अर्डर रद्द गर्न सकिन्छ?' : 'Can I cancel my order?', content: lang === 'ne' ? 'अर्डर confirm हुनुअघि रद्द गर्न सकिन्छ।' : 'You can cancel before the cook confirms your order.' },
-    { id: '4', icon: '⭐', title: lang === 'ne' ? 'पकाउने कसरी रेट गर्ने?' : 'How do I rate a cook?', content: lang === 'ne' ? 'डेलिभर भएपछि अर्डर कार्डमा "रेटिङ दिनुस्" थिच्नुस्।' : 'After delivery, tap "Rate meal" on the order card.' },
+    { id: '1', icon: '🚚', title: 'How long does delivery take?', content: 'Usually 30-45 minutes. May take longer during peak hours (12-1 PM).' },
+    { id: '2', icon: '💳', title: 'What payment methods are available?', content: 'eSewa, Khalti, and Cash on Delivery are all supported.' },
+    { id: '3', icon: '🔄', title: 'Can I cancel my order?', content: 'Yes, you can cancel before the cook confirms your order (usually within 2 minutes).' },
+    { id: '4', icon: '👩‍🍳', title: 'How do I become a cook?', content: 'Go to the Cooks tab and tap "Become a Cook". It\'s free to join!' },
+    { id: '5', icon: '💰', title: 'How do cooks get paid?', content: 'Weekly payouts via eSewa or bank transfer every Monday.' },
   ]
+
+  const menuItems = MENU_ITEMS(lang, setLang, setShowPayments, setShowPlans, showSnack, notifications, setNotifications)
 
   return (
     <>
       <SafeAreaView style={s.safe} edges={['top']}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Profile hero */}
-          <View style={s.hero}>
-            <View style={s.avatarWrap}>
-              <View style={s.avatar}><Text style={s.avatarText}>😊</Text></View>
-              <View style={s.onlineDot} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.name}>{user?.name || 'Sanjay Shrestha'}</Text>
-              <Text style={s.phone}>{user?.phone || '+977 98XXXXXXXX'}</Text>
-              <View style={s.badgeRow}>
-                <Badge label={lang === 'ne' ? 'प्रमाणित' : 'Verified'} variant="green" dot />
-                <Badge label={lang === 'ne' ? 'नियमित ग्राहक' : 'Regular'} variant="brand" />
+
+          {/* Hero banner */}
+          <View style={s.heroBanner}>
+            <View style={s.heroGradient} />
+            <View style={s.heroContent}>
+              <View style={s.avatarWrap}>
+                <View style={s.avatar}>
+                  <Text style={s.avatarEmoji}>😊</Text>
+                </View>
+                <View style={s.onlineDot} />
+                <TouchableOpacity style={s.editAvatarBtn}>
+                  <Text style={s.editAvatarText}>📷</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={s.heroInfo}>
+                <Text style={s.heroName}>{user?.name || 'Sanjay Shrestha'}</Text>
+                <Text style={s.heroPhone}>{user?.phone || '+977 98XXXXXXXX'}</Text>
+                <View style={s.heroBadges}>
+                  <View style={s.verifiedBadge}>
+                    <Text style={s.verifiedText}>✓ Verified</Text>
+                  </View>
+                  <View style={s.memberBadge}>
+                    <Text style={s.memberText}>⭐ Regular</Text>
+                  </View>
+                </View>
               </View>
             </View>
-            <TouchableOpacity style={s.editBtn}>
-              <Text style={s.editIcon}>✏️</Text>
-            </TouchableOpacity>
           </View>
 
-          {/* Stats bento */}
-          <View style={s.section}>
-            <BentoGrid>
-              <BentoCard icon="📦" title={lang === 'ne' ? 'कुल अर्डर' : 'Total Orders'} value={String(orders.length)} bg="#FAECE7" color="#C0392B" />
-              <BentoCard icon="👨‍🍳" title={lang === 'ne' ? 'पकाउने' : 'Cooks Tried'} value={String(cooksTried)} bg="#f0fdf4" color="#16a34a" />
-              <BentoCard icon="💰" title={lang === 'ne' ? 'कुल खर्च' : 'Total Spent'} value={`Rs.${totalSpent.toLocaleString()}`} bg="#eff6ff" color="#2563eb" wide />
-            </BentoGrid>
+          {/* Stats row */}
+          <View style={s.statsRow}>
+            {[
+              { val: String(orders.length), label: 'Orders', icon: '📦', color: '#C0392B', bg: '#FAECE7' },
+              { val: String(cooksTried), label: 'Cooks', icon: '👨‍🍳', color: '#16a34a', bg: '#f0fdf4' },
+              { val: `Rs.${(totalSpent/1000).toFixed(1)}K`, label: 'Spent', icon: '💰', color: '#2563eb', bg: '#eff6ff' },
+              { val: String(toRate), label: 'To Rate', icon: '⭐', color: '#ca8a04', bg: '#fefce8' },
+            ].map((stat, i) => (
+              <View key={i} style={[s.statCard, { backgroundColor: stat.bg }]}>
+                <Text style={s.statIcon}>{stat.icon}</Text>
+                <Text style={[s.statVal, { color: stat.color }]}>{stat.val}</Text>
+                <Text style={s.statLabel}>{stat.label}</Text>
+              </View>
+            ))}
           </View>
 
-          {/* Settings */}
+          {/* Menu */}
           <View style={s.section}>
-            <Text style={s.sectionTitle}>{lang === 'ne' ? 'सेटिङ' : 'Settings'}</Text>
+            <Text style={s.sectionTitle}>Account</Text>
             <View style={s.menuCard}>
-              {/* Language */}
-              <TouchableOpacity style={s.menuItem} onPress={() => setLang(l => l === 'en' ? 'ne' : 'en')}>
-                <Text style={s.menuIcon}>🌐</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.menuLabel}>{lang === 'ne' ? 'भाषा' : 'Language'}</Text>
-                  <Text style={s.menuSub}>{lang === 'en' ? 'English' : 'नेपाली'}</Text>
-                </View>
-                <Badge label={lang === 'en' ? 'EN' : 'NE'} variant="brand" size="sm" />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={s.menuItem} onPress={() => setShowPayments(true)}>
-                <Text style={s.menuIcon}>💳</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.menuLabel}>{lang === 'ne' ? 'भुक्तानी विधि' : 'Payment Methods'}</Text>
-                  <Text style={s.menuSub}>eSewa, Khalti, Cash</Text>
-                </View>
-                <Text style={s.menuArrow}>›</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={s.menuItem} onPress={() => setShowPlans(true)}>
-                <Text style={s.menuIcon}>📦</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.menuLabel}>{lang === 'ne' ? 'सदस्यता योजना' : 'Subscription Plans'}</Text>
-                  <Text style={s.menuSub}>{lang === 'ne' ? 'बचत गर्नुस्' : 'Save on every meal'}</Text>
-                </View>
-                <Badge label={lang === 'ne' ? 'सक्रिय' : 'Active'} variant="green" size="sm" />
-              </TouchableOpacity>
-
-              <View style={s.menuItem}>
-                <Text style={s.menuIcon}>🔔</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.menuLabel}>{lang === 'ne' ? 'सूचनाहरू' : 'Notifications'}</Text>
-                  <Text style={s.menuSub}>{notifications ? (lang === 'ne' ? 'सक्रिय' : 'Enabled') : (lang === 'ne' ? 'बन्द' : 'Disabled')}</Text>
-                </View>
-                <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: '#d1d5db', true: '#C0392B' }} thumbColor="#fff" />
-              </View>
-
-              <TouchableOpacity style={s.menuItem} onPress={() => showSnack(lang === 'ne' ? 'छिट्टै आउँदैछ!' : 'Coming soon!')}>
-                <Text style={s.menuIcon}>🎁</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.menuLabel}>{lang === 'ne' ? 'रेफर र कमाउनुस्' : 'Refer & Earn'}</Text>
-                  <Text style={s.menuSub}>{lang === 'ne' ? 'Rs. २०० प्रति रेफर' : 'Rs. 200 per referral'}</Text>
-                </View>
-                <Text style={s.menuArrow}>›</Text>
-              </TouchableOpacity>
+              {menuItems.map((item, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[s.menuItem, i < menuItems.length - 1 && s.menuItemBorder]}
+                  onPress={item.action}
+                  activeOpacity={item.right === 'switch' ? 1 : 0.7}
+                >
+                  <View style={s.menuIconWrap}>
+                    <Text style={s.menuIcon}>{item.icon}</Text>
+                  </View>
+                  <View style={s.menuInfo}>
+                    <Text style={s.menuLabel}>{item.label}</Text>
+                    <Text style={s.menuSub}>{item.sub}</Text>
+                  </View>
+                  {item.right === 'arrow' && <Text style={s.menuArrow}>›</Text>}
+                  {item.right === 'switch' && (
+                    <Switch value={notifications} onValueChange={setNotifications}
+                      trackColor={{ false: '#d1d5db', true: '#C0392B' }} thumbColor="#fff" />
+                  )}
+                  {item.right === 'badge-green' && (
+                    <View style={s.activeBadge}><Text style={s.activeBadgeText}>Active</Text></View>
+                  )}
+                  {item.right === 'toggle-lang' && (
+                    <View style={s.langToggle}>
+                      <Text style={s.langToggleText}>{lang === 'en' ? 'नेपाली' : 'EN'}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
-          {/* FAQ Accordion */}
+          {/* FAQ */}
           <View style={s.section}>
-            <Text style={s.sectionTitle}>{lang === 'ne' ? 'सामान्य प्रश्नहरू' : 'FAQ'}</Text>
-            <Accordion items={faqItems} />
+            <Text style={s.sectionTitle}>Help & FAQ</Text>
+            <Accordion items={faqItems} allowMultiple />
           </View>
 
           {/* Sign out */}
           <View style={s.section}>
-            <Button label={lang === 'ne' ? 'साइन आउट' : 'Sign Out'} variant="outline" fullWidth onPress={logout} />
+            <TouchableOpacity style={s.signOutBtn} onPress={logout}>
+              <Text style={s.signOutText}>Sign Out</Text>
+            </TouchableOpacity>
           </View>
 
           <Text style={s.version}>TiffinGhar v1.0.0 · Made with ❤️ in Nepal</Text>
@@ -151,13 +162,11 @@ export default function ProfileScreen() {
         <TouchableOpacity style={m.overlay} activeOpacity={1} onPress={() => setShowPayments(false)}>
           <TouchableOpacity style={m.sheet} activeOpacity={1}>
             <View style={m.handle} />
-            <Text style={m.title}>💳 {lang === 'ne' ? 'भुक्तानी विधि' : 'Payment Methods'}</Text>
-            <RadioGroup
-              options={PAYMENT_OPTIONS.map(p => ({ ...p, label: `${p.badge} ${p.label}` }))}
-              value={activePayment}
-              onChange={setActivePayment}
-            />
-            <Button label={lang === 'ne' ? 'सेभ गर्नुस्' : 'Save'} fullWidth onPress={() => { setShowPayments(false); showSnack(lang === 'ne' ? 'भुक्तानी विधि सेभ भयो!' : 'Payment method saved!') }} style={{ marginTop: 8 }} />
+            <Text style={m.title}>💳 Payment Methods</Text>
+            <RadioGroup options={PAYMENT_OPTIONS} value={activePayment} onChange={setActivePayment} />
+            <TouchableOpacity style={m.btn} onPress={() => { setShowPayments(false); showSnack('Payment method saved!') }}>
+              <Text style={m.btnText}>Save</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -167,10 +176,12 @@ export default function ProfileScreen() {
         <TouchableOpacity style={m.overlay} activeOpacity={1} onPress={() => setShowPlans(false)}>
           <TouchableOpacity style={m.sheet} activeOpacity={1}>
             <View style={m.handle} />
-            <Text style={m.title}>📦 {lang === 'ne' ? 'सदस्यता योजना' : 'Subscription Plans'}</Text>
-            <Text style={m.sub}>{lang === 'ne' ? 'सदस्यता लिएर प्रति खानामा बचत गर्नुस्' : 'Subscribe and save on every meal'}</Text>
+            <Text style={m.title}>📦 Subscription Plans</Text>
+            <Text style={m.sub}>Subscribe and save on every meal</Text>
             <RadioGroup options={PLAN_OPTIONS} value={activePlan} onChange={setActivePlan} />
-            <Button label={lang === 'ne' ? 'सदस्यता लिनुस्' : 'Subscribe Now'} fullWidth onPress={() => { setShowPlans(false); showSnack(lang === 'ne' ? 'सदस्यता सक्रिय भयो!' : 'Subscription activated!') }} style={{ marginTop: 8 }} />
+            <TouchableOpacity style={m.btn} onPress={() => { setShowPlans(false); showSnack('Subscription activated! 🎉') }}>
+              <Text style={m.btnText}>Subscribe Now</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -181,32 +192,55 @@ export default function ProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  safe: { flex: 1, backgroundColor: '#f5f5f5' },
+  heroBanner: { backgroundColor: '#C0392B', paddingTop: 20, paddingBottom: 28, paddingHorizontal: 16, position: 'relative' },
+  heroGradient: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.1)' },
+  heroContent: { flexDirection: 'row', alignItems: 'flex-end', gap: 14 },
   avatarWrap: { position: 'relative' },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FAECE7', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 30 },
-  onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#16a34a', borderWidth: 2, borderColor: '#fff' },
-  name: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  phone: { fontSize: 13, color: '#6b7280', marginTop: 2 },
-  badgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
-  editBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
-  editIcon: { fontSize: 16 },
-  section: { padding: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
-  menuCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: '#f9fafb' },
-  menuIcon: { fontSize: 20, width: 28, textAlign: 'center' },
+  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)' },
+  avatarEmoji: { fontSize: 34 },
+  onlineDot: { position: 'absolute', bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: '#4ade80', borderWidth: 2, borderColor: '#C0392B' },
+  editAvatarBtn: { position: 'absolute', top: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  editAvatarText: { fontSize: 12 },
+  heroInfo: { flex: 1, paddingBottom: 4 },
+  heroName: { fontSize: 20, fontWeight: '800', color: '#fff', letterSpacing: -0.3 },
+  heroPhone: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  heroBadges: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  verifiedBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  verifiedText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  memberBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  memberText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  statsRow: { flexDirection: 'row', gap: 8, padding: 16, marginTop: -4 },
+  statCard: { flex: 1, borderRadius: 14, padding: 12, alignItems: 'center', gap: 3 },
+  statIcon: { fontSize: 18 },
+  statVal: { fontSize: 15, fontWeight: '800' },
+  statLabel: { fontSize: 10, color: '#6b7280', fontWeight: '500' },
+  section: { paddingHorizontal: 16, marginBottom: 8 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  menuCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
+  menuItemBorder: { borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+  menuIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#f5f5f5', alignItems: 'center', justifyContent: 'center' },
+  menuIcon: { fontSize: 18 },
+  menuInfo: { flex: 1 },
   menuLabel: { fontSize: 14, fontWeight: '600', color: '#111827' },
   menuSub: { fontSize: 12, color: '#9ca3af', marginTop: 1 },
-  menuArrow: { fontSize: 22, color: '#d1d5db' },
-  version: { textAlign: 'center', fontSize: 12, color: '#d1d5db', paddingBottom: 24 },
+  menuArrow: { fontSize: 20, color: '#d1d5db' },
+  activeBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  activeBadgeText: { fontSize: 11, color: '#15803d', fontWeight: '700' },
+  langToggle: { backgroundColor: '#FAECE7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  langToggleText: { fontSize: 12, color: '#C0392B', fontWeight: '700' },
+  signOutBtn: { backgroundColor: '#fff', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: '#e5e7eb' },
+  signOutText: { fontSize: 15, fontWeight: '700', color: '#374151' },
+  version: { textAlign: 'center', fontSize: 11, color: '#d1d5db', paddingBottom: 32, paddingTop: 8 },
 })
 
 const m = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36, maxHeight: '85%' },
   handle: { width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 4, alignSelf: 'center', marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 4 },
+  title: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 4 },
   sub: { fontSize: 13, color: '#6b7280', marginBottom: 16 },
+  btn: { backgroundColor: '#C0392B', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 })

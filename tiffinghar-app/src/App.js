@@ -56,9 +56,14 @@ function Shell() {
         {/* Top bar */}
         <SafeAreaView edges={['top']} style={{ backgroundColor: '#C0392B' }}>
           <View style={s.topBar}>
-            <View>
-              <Text style={s.logo}>🍱 TiffinGhar</Text>
-              <Text style={s.logoSub}>{lang === 'ne' ? 'घरको खाना, ढोकासम्म' : 'Home food, to your door'}</Text>
+            <View style={s.logoWrap}>
+              <View style={s.logoBadge}>
+                <Text style={s.logoEmoji}>🍱</Text>
+              </View>
+              <View>
+                <Text style={s.logo}>TiffinGhar</Text>
+                <Text style={s.logoSub}>{lang === 'ne' ? 'घरको खाना, ढोकासम्म' : 'Home food, to your door'}</Text>
+              </View>
             </View>
             <View style={s.topRight}>
               {/* Cook dashboard — only for cooks */}
@@ -163,29 +168,40 @@ export default function App() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, backgroundColor: '#C0392B' },
-  logo: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  logoSub: { fontSize: 11, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  iconBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: '#f5f5f5' },
+  topBar: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, backgroundColor: '#C0392B',
+  },
+  logoWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoBadge: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  logoEmoji: { fontSize: 18 },
+  logo: { fontSize: 20, fontWeight: '800', color: '#fff', letterSpacing: -0.3 },
+  logoSub: { fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 1 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   iconBtnText: { fontSize: 16 },
-  cartBtn: { position: 'relative', padding: 4 },
-  cartIcon: { fontSize: 20 },
-  cartBadge: { position: 'absolute', top: 0, right: 0, backgroundColor: '#facc15', width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  cartBtn: { position: 'relative', width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  cartIcon: { fontSize: 17 },
+  cartBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: '#facc15', minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: '#C0392B' },
   cartBadgeText: { fontSize: 9, fontWeight: '800', color: '#7c2d12' },
-  langBtn: { backgroundColor: 'rgba(255,255,255,0.22)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 16 },
+  langBtn: { backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   langBtnText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  locBar: { backgroundColor: '#A93226', paddingHorizontal: 16, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  locDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
-  locText: { flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.9)' },
-  changeText: { fontSize: 11, color: 'rgba(255,255,255,0.7)', textDecorationLine: 'underline' },
+  locBar: { backgroundColor: '#A93226', paddingHorizontal: 16, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  locDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ade80' },
+  locText: { flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.92)', fontWeight: '500' },
+  changeText: { fontSize: 11, color: 'rgba(255,255,255,0.65)', textDecorationLine: 'underline' },
   screen: { flex: 1 },
-  tabBar: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 0.5, borderTopColor: '#e5e7eb', paddingTop: 6, paddingBottom: Platform.OS === 'ios' ? 0 : 6 },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 4, position: 'relative' },
-  tabIndicator: { position: 'absolute', top: 0, width: 28, height: 3, backgroundColor: '#C0392B', borderRadius: 2 },
-  tabIcon: { fontSize: 20, opacity: 0.35 },
+  tabBar: {
+    flexDirection: 'row', backgroundColor: '#fff',
+    borderTopWidth: 1, borderTopColor: '#f0f0f0',
+    paddingTop: 8, paddingBottom: Platform.OS === 'ios' ? 4 : 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 8,
+  },
+  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 2, position: 'relative' },
+  tabIndicator: { position: 'absolute', top: -8, width: 32, height: 3, backgroundColor: '#C0392B', borderRadius: 2 },
+  tabIcon: { fontSize: 22, opacity: 0.3 },
   tabIconActive: { opacity: 1 },
-  tabLabel: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  tabLabel: { fontSize: 10, color: '#9ca3af', marginTop: 3, fontWeight: '500' },
   tabLabelActive: { color: '#C0392B', fontWeight: '700' },
 })

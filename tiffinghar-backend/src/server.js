@@ -1,37 +1,60 @@
 require('dotenv').config()
+const express = require('express')
+const cors = require('cors')
 const mongoose = require('mongoose')
 const http = require('http')
 const { Server } = require('socket.io')
-const config = require('./config/env')
-const { buildApp, originAllowed } = require('./app')
-const app = buildApp()
+
+const app = express()
 const server = http.createServer(app)
 
 // Socket.IO for real-time order tracking
-const io = new Server(server, {
-  cors: {
-    origin: (origin, cb) => {
-      if (originAllowed(origin, config.socketOrigins)) return cb(null, true)
-      cb(new Error('Socket origin not allowed'))
-    },
-    credentials: true,
-  },
-})
+const io = new Server(server, { cors: { origin: '*' } })
 app.set('io', io)
 
 io.on('connection', (socket) => {
-  // Customer joins their order room
   socket.on('join_order', (orderId) => socket.join(`order_${orderId}`))
-  // Cook joins their dashboard room
-  socket.on('join_cook', (cookId) => socket.join(`cook_${cookId}`))
-  socket.on('disconnect', () => {})
+  socket.on('join_cook',  (cookId)  => socket.join(`cook_${cookId}`))
 })
 
-mongoose.connect(config.mongoUri)
-  .then(() => {
-    console.log('MongoDB connected')
-    server.listen(config.port, () =>
-      console.log(`Server + WebSocket on port ${config.port}`)
-    )
+app.use(cors())
+app.use(express.json())
+app.use('/uploads', express.static('uploads'))
+
+app.use('/api/auth',    require('./routes/auth'))
+app.use('/api/cooks',   require('./routes/cooks'))
+app.use('/api/orders',  require('./routes/orders'))
+app.use('/api/cart',    require('./routes/cart'))
+app.use('/api/reviews', require('./routes/reviews'))
+app.use('/api/user',    require('./routes/user'))
+app.use('/api/offers',  require('./routes/offers'))
+
+app.get('/', (req, res) => res.json({ message: 'TiffinGhar API v2.0', status: 'ok' }))
+
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).json({ success: false, message: err.message || 'Server error' })
+})
+
+const PORT = process.env.PORT || 5000
+
+const startServer = () => {
+  server.listen(PORT, () => console.log(`Server + WebSocket on port ${PORT}`))
+}
+
+const MONGO_OPTS = {
+  tls: true,
+  serverSelectionTimeoutMS: 10000,
+}
+
+mongoose.connect(process.env.MONGO_URI, MONGO_OPTS)
+  .then(() => { console.log('MongoDB connected'); startServer() })
+  .catch(err => {
+    console.error('DB connection failed:', err.message)
+    console.log('Retrying in 5 seconds...')
+    setTimeout(() => {
+      mongoose.connect(process.env.MONGO_URI, MONGO_OPTS)
+        .then(() => { console.log('MongoDB connected (retry)'); startServer() })
+        .catch(e => { console.error('DB retry failed:', e.message); process.exit(1) })
+    }, 5000)
   })
-  .catch(err => { console.error('DB error:', err); process.exit(1) })

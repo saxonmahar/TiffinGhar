@@ -1,10 +1,11 @@
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native'
+import { useState } from 'react'
+import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native'
 import { useApp } from '../context/AppContext'
 
 const badgeColors = {
-  green:   { bg: '#EAF3DE', text: '#3B6D11' },
-  blue:    { bg: '#E6F1FB', text: '#185FA5' },
-  default: { bg: '#FAECE7', text: '#993C1D' },
+  green:   { bg: '#dcfce7', text: '#15803d' },
+  blue:    { bg: '#dbeafe', text: '#1d4ed8' },
+  default: { bg: '#fff7ed', text: '#c2410c' },
 }
 
 const getBadgeColor = (badge) => {
@@ -22,109 +23,199 @@ const getBadgeLabel = (badge, lang) => {
   return badge || ''
 }
 
+const getLocation = (cook) => {
+  const loc = cook.location
+  if (!loc) return 'Kathmandu'
+  if (typeof loc === 'string') return loc
+  return loc.area || loc.address || loc.city || 'Kathmandu'
+}
+
 export default function CookCard({ cook, onPress, onAddToCart }) {
   const { lang, addToCart, toggleSaveCook } = useApp()
+  const [imgError, setImgError] = useState(false)
   const meals = (lang === 'ne' ? cook.mealsNe : cook.meals) || []
   const badges = cook.badges || []
+  const isAvailable = cook.available !== false && cook.isOpen !== false
+
+  const handleAdd = () => {
+    const fn = onAddToCart || addToCart
+    fn(cook)
+  }
 
   return (
-    <TouchableOpacity style={s.card} onPress={() => onPress(cook)} activeOpacity={0.85}>
-      {/* Header */}
-      <View style={s.header}>
-        <View style={[s.avatar, { backgroundColor: cook.avatarBg || '#FAECE7' }]}>
-          <Text style={s.avatarText}>{cook.avatar || '👨‍🍳'}</Text>
-        </View>
-        <View style={s.headerInfo}>
-          <View style={s.nameRow}>
-            <Text style={s.name} numberOfLines={1}>{lang === 'ne' ? cook.nameNe : cook.name}</Text>
-            <TouchableOpacity onPress={() => toggleSaveCook(cook.id || cook._id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={s.heart}>{cook.saved ? '❤️' : '🤍'}</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={s.meta} numberOfLines={1}>
-            {(() => {
-              const loc = cook.location
-              const locStr = typeof loc === 'string' ? loc : (loc?.area || loc?.address || loc?.city || 'Kathmandu')
-              return `${locStr} · ${cook.distance || '1 km'} · ⭐ ${cook.rating || 4.5} (${cook.reviews || cook.totalReviews || 0})`
-            })()}
-          </Text>
-        </View>
-      </View>
-
-      {!cook.available && cook.isOpen === false && (
-        <View style={s.unavailableBadge}>
-          <Text style={s.unavailableText}>⏸ {lang === 'ne' ? 'अहिले उपलब्ध छैन' : 'Not available now'}</Text>
-        </View>
-      )}
-
-      {/* Badges */}
-      {badges.length > 0 && (
-        <View style={s.badgeRow}>
-          {badges.map((b, i) => {
-            const c = getBadgeColor(b)
-            return (
-              <View key={i} style={[s.badge, { backgroundColor: c.bg }]}>
-                <Text style={[s.badgeText, { color: c.text }]}>
-                  {getBadgeLabel(b, lang)}
-                </Text>
-              </View>
-            )
-          })}
-        </View>
-      )}
-
-      {/* Meals */}
-      {meals.length > 0 && (
-        <View style={s.mealRow}>
-          {meals.slice(0, 3).map((m, i) => (
-            <View key={i} style={s.mealPill}>
-              <Text style={s.mealText}>{m}</Text>
+    <TouchableOpacity style={s.card} onPress={() => onPress(cook)} activeOpacity={0.92}>
+      {/* Cover image */}
+      {cook.coverImage && (
+        <View style={s.coverWrap}>
+          <Image
+            source={{ uri: cook.coverImage }}
+            style={s.cover}
+            resizeMode="cover"
+          />
+          {/* Overlay gradient effect */}
+          <View style={s.coverOverlay} />
+          {/* Delivery time badge */}
+          {cook.deliveryTime && (
+            <View style={s.deliveryBadge}>
+              <Text style={s.deliveryText}>🕐 {cook.deliveryTime}</Text>
             </View>
-          ))}
-          {meals.length > 3 && (
-            <View style={s.mealPill}>
-              <Text style={s.mealText}>+{meals.length - 3}</Text>
+          )}
+          {/* Unavailable overlay */}
+          {!isAvailable && (
+            <View style={s.unavailableOverlay}>
+              <Text style={s.unavailableText}>Currently Closed</Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Price + CTA */}
-      <View style={s.priceRow}>
-        <Text style={s.price}>Rs. {cook.price || 150} / {lang === 'ne' ? 'खाना' : 'meal'}</Text>
-        <TouchableOpacity
-          style={[s.orderBtn, (!cook.available && cook.isOpen === false) && s.orderBtnDisabled]}
-          onPress={() => (onAddToCart || addToCart)(cook)}
-          disabled={!cook.available && cook.isOpen === false}
-        >
-          <Text style={s.orderBtnText}>{lang === 'ne' ? 'कार्टमा थप्नुस्' : 'Add to Cart'}</Text>
-        </TouchableOpacity>
+      <View style={s.body}>
+        {/* Header row */}
+        <View style={s.header}>
+          {/* Avatar */}
+          <View style={s.avatarWrap}>
+            {cook.avatar && !imgError && typeof cook.avatar === 'string' && cook.avatar.startsWith('http') ? (
+              <Image
+                source={{ uri: cook.avatar }}
+                style={s.avatarImg}
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <View style={[s.avatarFallback, { backgroundColor: cook.avatarBg || '#FAECE7' }]}>
+                <Text style={s.avatarEmoji}>
+                  {typeof cook.avatar === 'string' && !cook.avatar.startsWith('http') ? cook.avatar : '👨‍🍳'}
+                </Text>
+              </View>
+            )}
+            {/* Online indicator */}
+            {isAvailable && <View style={s.onlineDot} />}
+          </View>
+
+          <View style={s.headerInfo}>
+            <View style={s.nameRow}>
+              <Text style={s.name} numberOfLines={1}>{lang === 'ne' ? cook.nameNe : cook.name}</Text>
+              <TouchableOpacity
+                onPress={() => toggleSaveCook(cook.id || cook._id)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={s.heart}>{cook.saved ? '❤️' : '🤍'}</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={s.location} numberOfLines={1}>
+              📍 {getLocation(cook)} · {cook.distance || '1 km'}
+            </Text>
+            <View style={s.ratingRow}>
+              <View style={s.ratingBadge}>
+                <Text style={s.ratingText}>⭐ {cook.rating || 4.5}</Text>
+              </View>
+              <Text style={s.reviewCount}>({cook.reviews || cook.totalReviews || 0} reviews)</Text>
+              {cook.totalOrders > 0 && (
+                <Text style={s.orders}>· {cook.totalOrders}+ orders</Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Badges */}
+        {badges.length > 0 && (
+          <View style={s.badgeRow}>
+            {badges.slice(0, 3).map((b, i) => {
+              const c = getBadgeColor(b)
+              return (
+                <View key={i} style={[s.badge, { backgroundColor: c.bg }]}>
+                  <Text style={[s.badgeText, { color: c.text }]}>
+                    {getBadgeLabel(b, lang)}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        )}
+
+        {/* Meals */}
+        {meals.length > 0 && (
+          <View style={s.mealRow}>
+            {meals.slice(0, 3).map((m, i) => (
+              <View key={i} style={s.mealPill}>
+                <Text style={s.mealText}>{m}</Text>
+              </View>
+            ))}
+            {meals.length > 3 && (
+              <View style={s.mealPill}>
+                <Text style={s.mealText}>+{meals.length - 3} more</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Footer */}
+        <View style={s.footer}>
+          <View>
+            <Text style={s.price}>Rs. {cook.price}</Text>
+            <Text style={s.priceLabel}>{lang === 'ne' ? 'प्रति खाना' : 'per meal'}</Text>
+          </View>
+          <TouchableOpacity
+            style={[s.addBtn, !isAvailable && s.addBtnDisabled]}
+            onPress={handleAdd}
+            disabled={!isAvailable}
+            activeOpacity={0.8}
+          >
+            <Text style={s.addBtnText}>
+              {isAvailable ? (lang === 'ne' ? '+ कार्टमा थप्नुस्' : '+ Add to Cart') : (lang === 'ne' ? 'बन्द छ' : 'Closed')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   )
 }
 
 const s = StyleSheet.create({
-  card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#e5e7eb', padding: 14, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 22 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  coverWrap: { height: 140, position: 'relative' },
+  cover: { width: '100%', height: '100%' },
+  coverOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.08)' },
+  deliveryBadge: { position: 'absolute', bottom: 10, left: 12, backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  deliveryText: { color: '#fff', fontSize: 11, fontWeight: '600' },
+  unavailableOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  unavailableText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  body: { padding: 14 },
+  header: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  avatarWrap: { position: 'relative' },
+  avatarImg: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#fff' },
+  avatarFallback: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
+  avatarEmoji: { fontSize: 24 },
+  onlineDot: { position: 'absolute', bottom: 1, right: 1, width: 13, height: 13, borderRadius: 7, backgroundColor: '#16a34a', borderWidth: 2, borderColor: '#fff' },
   headerInfo: { flex: 1, minWidth: 0 },
-  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  name: { fontSize: 15, fontWeight: '700', color: '#111827', flex: 1 },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 },
+  name: { fontSize: 16, fontWeight: '700', color: '#111827', flex: 1 },
   heart: { fontSize: 18, marginLeft: 8 },
-  meta: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-  unavailableBadge: { backgroundColor: '#fff7ed', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 8 },
-  unavailableText: { fontSize: 11, color: '#c2410c', fontWeight: '500' },
+  location: { fontSize: 12, color: '#6b7280', marginBottom: 5 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingBadge: { backgroundColor: '#fef9c3', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
+  ratingText: { fontSize: 12, fontWeight: '700', color: '#854d0e' },
+  reviewCount: { fontSize: 11, color: '#9ca3af' },
+  orders: { fontSize: 11, color: '#9ca3af' },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
   badgeText: { fontSize: 11, fontWeight: '600' },
-  mealRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  mealPill: { backgroundColor: '#f3f4f6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  mealText: { fontSize: 12, color: '#6b7280' },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontSize: 16, fontWeight: '700', color: '#C0392B' },
-  orderBtn: { backgroundColor: '#C0392B', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 },
-  orderBtnDisabled: { backgroundColor: '#d1d5db' },
-  orderBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  mealRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  mealPill: { backgroundColor: '#f3f4f6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  mealText: { fontSize: 12, color: '#374151', fontWeight: '500' },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f9fafb' },
+  price: { fontSize: 18, fontWeight: '800', color: '#C0392B' },
+  priceLabel: { fontSize: 11, color: '#9ca3af', marginTop: 1 },
+  addBtn: { backgroundColor: '#C0392B', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12 },
+  addBtnDisabled: { backgroundColor: '#e5e7eb' },
+  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 })
