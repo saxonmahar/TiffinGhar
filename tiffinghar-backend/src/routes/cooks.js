@@ -12,10 +12,10 @@ router.get('/',
   validate,
   async (req, res) => {
   try {
-    const { search, specialty, city = 'Kathmandu', sort = 'rating', page = 1, limit = 20 } = req.query
+    const { search, specialty, city, sort = 'rating', page = 1, limit = 20 } = req.query
 
     const query = { isVerified: true, isOpen: true }
-    if (city) query['location.city'] = new RegExp(city, 'i')
+    if (city && city !== 'all') query['location.city'] = new RegExp(city, 'i')
     if (specialty) query.specialties = new RegExp(specialty, 'i')
     if (search) {
       query.$or = [
