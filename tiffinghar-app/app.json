@@ -5,20 +5,36 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#ffffff",
     "splash": {
-      "backgroundColor": "#C0392B"
+      "backgroundColor": "#C0392B",
+      "resizeMode": "contain"
     },
     "android": {
       "package": "com.tiffinghar.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#C0392B"
-      }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET",
+        "CAMERA"
+      ]
     },
     "ios": {
-      "bundleIdentifier": "com.tiffinghar.app"
+      "bundleIdentifier": "com.tiffinghar.app",
+      "supportsTablet": false
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "TiffinGhar needs your location to find cooks near you."
+        }
+      ]
     ]
   }
 }
