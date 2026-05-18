@@ -2,12 +2,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --omit=dev
+# Copy package files
+COPY package.json package-lock.json ./
 
+# Install production dependencies
+RUN npm install --production --legacy-peer-deps
+
+# Copy source
 COPY . .
 
 ENV NODE_ENV=production
+
 EXPOSE 5000
 
-CMD ["npm", "start"]
+CMD ["node", "src/server.js"]
