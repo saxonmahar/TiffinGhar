@@ -2,7 +2,7 @@ import { tokenStorage } from '../utils/tokenStorage'
 
 // Priority: EXPO_PUBLIC_API_BASE_URL env var → LAN IP fallback
 // To change: update tiffinghar-app/.env with your PC's LAN IP
-export const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.4:5000/api'
+export const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://tiffinghar-production.up.railway.app/api'
 export const SOCKET_URL = BASE_URL.replace('/api', '')
 
 const request = async (method, path, body = null) => {
